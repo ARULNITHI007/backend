@@ -1,43 +1,26 @@
 require("dotenv").config();
 const express = require("express");
+const bodyParser = require("body-parser");
 const cors = require("cors");
-const mysql = require("mysql2");
+const db = require("./db");
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-// MySQL connection
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306,
-  ssl: { rejectUnauthorized: true }
-});
-
-connection.connect(err => {
-  if (err) {
-    console.error("❌ Database connection failed:", err);
-  } else {
-    console.log("✅ Connected to MySQL database");
-  }
-});
-
-// Route to insert user data
 app.post("/register", (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).send("Missing email or password");
+  const { userid, password } = req.body;
+  if (!userid || !password) {
+    return res.status(400).send("User ID and password required");
+  }
 
-  const query = "INSERT INTO users (email, password) VALUES (?, ?)";
-  connection.query(query, [email, password], err => {
+  const sql = "INSERT INTO users (userid, password) VALUES (?, ?)";
+  db.query(sql, [userid, password], (err, result) => {
     if (err) {
-      console.error("Database error:", err);
-      return res.status(500).send("Error saving data");
+      console.error("Error inserting data:", err);
+      return res.status(500).send("Error saving user");
     }
-    res.send("✅ Successfully submitted!");
+    res.send("User registered successfully!");
   });
 });
 
